@@ -1,2 +1,2 @@
 # Synthoria
-## A full stack AI-powered music synthesizer
+A full stack AI-powered music synthesizer
