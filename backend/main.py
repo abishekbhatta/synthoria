@@ -77,8 +77,8 @@ class SynthoriaServer:
             cache_dir = "/.cache/huggingface"
         )
 
-        self.sdxl_turbo_model.to("cuda")        # cuda moves the model to GPU
-                                                # normally, sdxl_turbo model is loaded into CPU
+        self.sdxl_turbo_model.to("cuda")     # cuda moves the model to GPU
+                                             # normally, sdxl_turbo model is loaded into CPU
 
     
 
