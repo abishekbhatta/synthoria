@@ -143,7 +143,6 @@ class SynthoriaServer:
         response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
         return response
 
-
     def generate_audio_tags(self, song_description: str):
 
         prompt = SONG_DESCRIPTION_PROMPT_GENERATOR.format(user_prompt=song_description) # Insert song description & creates prompt
@@ -183,7 +182,10 @@ class SynthoriaServer:
 
     @modal.fastapi_endpoint(method="POST")
     def simple_mode(self, request: SimpleMode) -> MusicResponseS3:
-        pass
+        # Generate audio tags
+        audio_tags = self.generate_audio_tags(request.song_description)
+        # Generate lyrics
+        lyrics = self.generate_lyrics(request.song_description)
 
     @modal.fastapi_endpoint(method="POST")
     def custom_mode_auto_lyric(self, request : CustomModeAutoLyric) -> MusicResponseS3:
@@ -201,7 +203,7 @@ def main():
     response = requests.post(endpoint_url)
 
     response.raise_for_status()
-    result = Reponse(**response.json())
+    result = MusicReponse(**response.json())
 
     audio_bytes = base64.b64decode(result.audio)
     output_filename = "generated.wav"
