@@ -46,6 +46,7 @@ class SynthesizerModelParams(BaseModel):
     seed : int = -1
     guidance_scale: float = 15.0
     infer_step: int = 60
+    instrumental: bool = False
 
 class SimpleMode(SynthesizerModelParams):
     song_description: str
@@ -145,13 +146,15 @@ class SynthoriaServer:
 
     def generate_audio_tags(self, song_description: str):
 
-        prompt = SONG_DESCRIPTION_PROMPT_GENERATOR.format(user_prompt=song_description) # Insert song description & creates prompt
+        prompt = SONG_DESCRIPTION_PROMPT_GENERATOR.format(user_prompt=song_description) # Insert song description & creates audio tags prompt
+
         return self.qwen_2_llm(prompt) # Returns audio tags from the prompt
     
 
     def generate_lyrics(self, lyrics_description: str):
 
-        prompt = LYRICS_PROMPT_GENERATOR.format(descripton=lyrics_description) # Inserts lyrics description & creates prompt
+        prompt = LYRICS_PROMPT_GENERATOR.format(descripton=lyrics_description) # Inserts lyric description & creates lyrics generator prompt
+
         return self.qwen_2_llm(prompt) # Returns lyrics from the prompt
     
 
@@ -184,8 +187,12 @@ class SynthoriaServer:
     def simple_mode(self, request: SimpleMode) -> MusicResponseS3:
         # Generate audio tags
         audio_tags = self.generate_audio_tags(request.song_description)
-        # Generate lyrics
-        lyrics = self.generate_lyrics(request.song_description)
+
+        lyric = ""
+        if not request.instrumental:
+            lyrics = self.generate_lyrics(request.song_description)  # Generate lyrics 
+        
+      
 
     @modal.fastapi_endpoint(method="POST")
     def custom_mode_auto_lyric(self, request : CustomModeAutoLyric) -> MusicResponseS3:
