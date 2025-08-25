@@ -188,9 +188,10 @@ class SynthoriaServer:
         # Generate audio tags
         audio_tags = self.generate_audio_tags(request.song_description)
 
-        lyric = ""
+        lyrics = ""
         if not request.instrumental:
             lyrics = self.generate_lyrics(request.song_description)  # Generate lyrics 
+        
         
       
 
