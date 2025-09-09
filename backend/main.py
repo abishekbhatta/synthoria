@@ -51,13 +51,13 @@ class SynthesizerModelParams(BaseModel):
 class SimpleMode(SynthesizerModelParams):
     song_description: str
 
-class CustomModeAutoLyric(SynthesizerModelParams):
+class CustomModeAutoLyrics(SynthesizerModelParams):
     prompt: str
     lyrics_description: str
 
-class CustomModeManualLyric(SynthesizerModelParams):
+class CustomModeManualLyrics(SynthesizerModelParams):
     prompt: str
-    lyric: str
+    lyrics: str
 
 
 class MusicResponseS3(BaseModel):
@@ -157,6 +157,23 @@ class SynthoriaServer:
 
         return self.qwen_2_llm(prompt) # Returns lyrics from the prompt
     
+    def generate_and_upload_to_s3(
+            self,
+            prompt: str,
+            lyrics: str,
+            instrumental: bool,
+            audio_duration: float,
+            infer_step: int,   # Number of refinement steps (infer_step)
+                               # More steps = better quality, slower generation
+
+            guidance_scale: float,  # How much the AI listens to instructions? (guidance_scale)
+                                    # Bigger scale = follows input closely, smaller = less tightly bound to prompt, more variations
+            seed: int ) -> MusicResponseS3:
+        
+        final_lyrics = "[insturmental]" if instrumental else lyrics
+        
+
+    
 
     @modal.fastapi_endpoint(method="POST")  # FastAPI Endpoint
     def synthesize(self) -> MusicReponse:
@@ -192,15 +209,13 @@ class SynthoriaServer:
         if not request.instrumental:
             lyrics = self.generate_lyrics(request.song_description)  # Generate lyrics 
         
-        
-      
 
     @modal.fastapi_endpoint(method="POST")
-    def custom_mode_auto_lyric(self, request : CustomModeAutoLyric) -> MusicResponseS3:
+    def custom_mode_auto_lyric(self, request : CustomModeAutoLyrics) -> MusicResponseS3:
         pass
 
     @modal.fastapi_endpoint(method="POST")
-    def custom_mode_manual_lyric(self, request : CustomModeManualLyric) -> MusicResponseS3:
+    def custom_mode_manual_lyric(self, request : CustomModeManualLyrics) -> MusicResponseS3:
         pass
 
 
