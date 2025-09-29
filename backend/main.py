@@ -73,7 +73,8 @@ class MusicReponse(BaseModel):
 # @app here is a decorator (Functions that take another function as a param)
 # @app.cls() for a class & @app.function() for a function
 @app.cls(
-    image=image,    
+    image=image, 
+    region="us-east-1",   
     gpu="L40S",
     volumes={"/models": model_volume, "/.cache/huggingface": hf_volume},  
     secrets= [synthoria_secrets],
@@ -171,7 +172,10 @@ class SynthoriaServer:
             seed: int ) -> MusicResponseS3:
         
         final_lyrics = "[insturmental]" if instrumental else lyrics
-        
+        print(f"Generated lyrics: \n{final_lyrics}")
+        print(f"Prompt: \n{prompt}") 
+
+    
 
     
 
