@@ -74,7 +74,6 @@ class MusicReponse(BaseModel):
 # @app.cls() for a class & @app.function() for a function
 @app.cls(
     image=image, 
-    region="us-east-1",   
     gpu="L40S",
     volumes={"/models": model_volume, "/.cache/huggingface": hf_volume},  
     secrets= [synthoria_secrets],
