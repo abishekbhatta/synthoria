@@ -77,8 +77,9 @@ class MusicReponse(BaseModel):
     gpu="L40S",
     volumes={"/models": model_volume, "/.cache/huggingface": hf_volume},  
     secrets= [synthoria_secrets],
-    scaledown_window= 15  # Keep container idle for extra 15s after a request is dealt with
+    scaledown_window= 15,  # Keep container idle for extra 15s after a request is dealt with
                           # If concurrent request, speeds up request response as model already loaded into GPU's memory
+    region='us-east-2' 
 )
 class SynthoriaServer:
     @modal.enter() # Loads model if it was a cold start 
