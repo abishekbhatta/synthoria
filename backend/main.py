@@ -3,6 +3,7 @@ import uuid
 import modal
 import os
 import requests
+import boto3 
 
 
 from pydantic import BaseModel
@@ -76,7 +77,7 @@ class MusicReponse(BaseModel):
     image=image, 
     gpu="L40S",
     volumes={"/models": model_volume, "/.cache/huggingface": hf_volume},  
-    secrets= [synthoria_secrets],
+    secrets= [modal.Secret.from_name("synthoria-secret")],
     scaledown_window= 15,  # Keep container idle for extra 15s after a request is dealt with
                           # If concurrent request, speeds up request response as model already loaded into GPU's memory
     region='us-east-2' 
@@ -170,12 +171,29 @@ class SynthoriaServer:
             guidance_scale: float,  # How much the AI listens to instructions? (guidance_scale)
                                     # Bigger scale = follows input closely, smaller = less tightly bound to prompt, more variations
             seed: int ) -> MusicResponseS3:
-        
-        final_lyrics = "[insturmental]" if instrumental else lyrics
-        print(f"Generated lyrics: \n{final_lyrics}")
-        print(f"Prompt: \n{prompt}") 
 
-    
+            final_lyrics = "[instrumental]" if instrumental else lyrics   
+
+            s3_client = boto3.client("s3")
+            bucket_name = os.environ("S3_BUCKET")
+
+            output_dir = "/tmp/outputs"     # Output directory to store music generated temporarily  
+            os.makedirs(output_dir, exist_ok=True) 
+            output_path = os.path.join(output_dir, f"{uuid.uuid4()}.wav")       # Using uuid4 for creating random uuid (id) for each song
+                                                                                # Avoid uuid1 as it uses computer netwrok address to create uuid, compromising privacy
+            self.synthesizer_model(
+                prompt= prompt,
+                lyrics= final_lyrics,
+                audio_duration= audio_duration,
+                infer_step= infer_step,
+                guidance_scale= guidance_scale,
+                save_path= output_path
+
+            )
+
+            audio_s3_key = f"{uuid.uuid4()}.wav"
+            s3_client.upload(output_path, bucket_name, audio_s3_key)
+            os.remove(output_path)
 
     
 
