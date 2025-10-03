@@ -76,10 +76,10 @@ class MusicReponse(BaseModel):
 @app.cls(
     image=image, 
     gpu="L40S",
-    volumes={"/models": model_volume, "/.cache/huggingface": hf_volume},  
+    volumes={"/models": model_volume, "/.cache/huggingface": hf_volume},        # Volumes store the music-generation and hugging faces' model (qwen2b & sdxl_turbo)
     secrets= [modal.Secret.from_name("synthoria-secret")],
     scaledown_window= 15,  # Keep container idle for extra 15s after a request is dealt with
-                          # If concurrent request, speeds up request response as model already loaded into GPU's memory
+                           # If concurrent request, speeds up request response as model already loaded into GPU's memory
     region='us-east-2' 
 )
 class SynthoriaServer:
@@ -179,7 +179,7 @@ class SynthoriaServer:
 
             output_dir = "/tmp/outputs"     # Output directory to store music generated temporarily  
             os.makedirs(output_dir, exist_ok=True) 
-            output_path = os.path.join(output_dir, f"{uuid.uuid4()}.wav")       # Using uuid4 for creating random uuid (id) for each song
+            output_path = os.path.join(output_dir, f"{uuid.uuid4()}.wav")       # Using uuid4 for creating random uuid (filename) for each song
                                                                                 # Avoid uuid1 as it uses computer netwrok address to create uuid, compromising privacy
             self.synthesizer_model(
                 prompt= prompt,
@@ -187,13 +187,36 @@ class SynthoriaServer:
                 audio_duration= audio_duration,
                 infer_step= infer_step,
                 guidance_scale= guidance_scale,
+                seed = seed,
                 save_path= output_path
 
             )
 
+            """Upload music to S3"""
+
             audio_s3_key = f"{uuid.uuid4()}.wav"
             s3_client.upload(output_path, bucket_name, audio_s3_key)
             os.remove(output_path)
+
+
+
+            """Generate and upload thumbnail to S3"""
+
+            thumbnail_prompt  = f"{prompt}, album art cover"
+            thumbnail = self.sdxl_turbo_model(prompt= thumbnail_prompt, num_inference_steps=1, guidance_scale=0.0).images[0]
+            thumbnail_output_path = os.path.join(output_dir, f"{uuid.uuid4()}.png")
+            thumbnail.save(thumbnail_output_path)
+            
+            thumbnail_s3_key = f"{uuid.uuid4()}.png"
+            s3_client.upload(thumbnail_output_path, bucket_name, thumbnail_s3_key)
+            os.remove(thumbnail_output_path)
+
+
+
+
+
+
+
 
     
 
