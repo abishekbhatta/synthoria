@@ -274,14 +274,11 @@ class SynthoriaServer:
         return self.generate_and_upload_to_s3(
             prompt=audio_prompt, 
             lyrics=lyrics, 
-            instrumental= request.instrumental,
             description_for_categorization= request.song_description,
-            **request.model_dump(exclude={"song_description", "instrumental"})      
-
+            **request.model_dump(exclude={"song_description"})    
                                     
         )
 
-        
 
     @modal.fastapi_endpoint(method="POST")
     def custom_mode_auto_lyric(self, request : CustomModeAutoLyrics) -> MusicResponseS3:
