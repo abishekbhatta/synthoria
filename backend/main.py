@@ -212,7 +212,6 @@ class SynthoriaServer:
             os.remove(output_path)
 
 
-
             """Generate and upload thumbnail to S3"""
 
             thumbnail_prompt  = f"{prompt}, album art cover"
@@ -265,12 +264,23 @@ class SynthoriaServer:
 
     @modal.fastapi_endpoint(method="POST")
     def simple_mode(self, request: SimpleMode) -> MusicResponseS3:
-        # Generate audio tags
-        audio_tags = self.generate_audio_tags(request.song_description)
+
+        audio_prompt = self.generate_audio_prompt(request.song_description)     # The prompt is just for generating music
 
         lyrics = ""
         if not request.instrumental:
-            lyrics = self.generate_lyrics(request.song_description)  # Generate lyrics 
+            lyrics = self.generate_lyrics(request.song_description) 
+        
+        return self.generate_and_upload_to_s3(
+            prompt=audio_prompt, 
+            lyrics=lyrics, 
+            instrumental= request.instrumental,
+            description_for_categorization= request.song_description,
+            **request.model_dump(exclude={"song_description", "instrumental"})      
+
+                                    
+        )
+
         
 
     @modal.fastapi_endpoint(method="POST")
