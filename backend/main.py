@@ -286,7 +286,14 @@ class SynthoriaServer:
 
     @modal.fastapi_endpoint(method="POST")
     def custom_mode_manual_lyric(self, request : CustomModeManualLyrics) -> MusicResponseS3:
-        pass
+
+        return self.generate_and_upload_to_s3(
+            prompt=request.prompt, 
+            lyrics=request.lyrics, 
+            description_for_categorization= request.song_description,
+            **request.model_dump()    
+                                    
+        )
 
 
 @app.local_entrypoint()
