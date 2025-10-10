@@ -29,3 +29,7 @@ Description: "{description}"
 
 Lyrics:
 """
+
+CATEGORY_PROMPT = """"
+Based on the following music description, list 3-5 relevant genres or categories as a comma-separated list. For example: Pop, Electronic, Sad, 80s. Description: "{description}"
+"""

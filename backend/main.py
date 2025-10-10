@@ -8,7 +8,7 @@ import boto3
 
 from pydantic import BaseModel
 from typing import List
-from prompts import SONG_DESCRIPTION_PROMPT_GENERATOR, LYRICS_PROMPT_GENERATOR
+from prompts import CATEGORY_PROMPT, SONG_DESCRIPTION_PROMPT_GENERATOR, LYRICS_PROMPT_GENERATOR
 
 app = modal.App("synthoria")
 
@@ -62,8 +62,8 @@ class CustomModeManualLyrics(SynthesizerModelParams):
 
 
 class MusicResponseS3(BaseModel):
-    s3_keys: str 
-    thumbnail: str
+    audio_s3_key: str 
+    thumbnail_s3_key: str
     categories: List[str]
 
 
@@ -146,11 +146,11 @@ class SynthoriaServer:
         response = self.tokenizer.batch_decode(generated_ids, skip_special_tokens=True)[0]
         return response
 
-    def generate_audio_tags(self, song_description: str):
+    def generate_audio_prompt(self, song_description: str):
 
-        prompt = SONG_DESCRIPTION_PROMPT_GENERATOR.format(user_prompt=song_description) # Insert song description & creates audio tags prompt
+        prompt = SONG_DESCRIPTION_PROMPT_GENERATOR.format(user_prompt=song_description) # Insert song description & creates prompt for the audio
 
-        return self.qwen_2_llm(prompt) # Returns audio tags from the prompt
+        return self.qwen_2_llm(prompt) 
     
 
     def generate_lyrics(self, lyrics_description: str):
@@ -158,6 +158,16 @@ class SynthoriaServer:
         prompt = LYRICS_PROMPT_GENERATOR.format(descripton=lyrics_description) # Inserts lyric description & creates lyrics generator prompt
 
         return self.qwen_2_llm(prompt) # Returns lyrics from the prompt
+    
+    def generate_category_tags(self, description: str) -> List[str]:
+
+        prompt = CATEGORY_PROMPT.format(description=description)        # Passing description of songs to generate tags to categorize audio
+        category_response =  self.qwen_2_llm(prompt)
+        categories_list = [category.strip() for category in category_response.split(",") if category.strip()]
+        return categories_list
+    
+
+
     
     def generate_and_upload_to_s3(
             self,
@@ -170,7 +180,10 @@ class SynthoriaServer:
 
             guidance_scale: float,  # How much the AI listens to instructions? (guidance_scale)
                                     # Bigger scale = follows input closely, smaller = less tightly bound to prompt, more variations
-            seed: int ) -> MusicResponseS3:
+            seed: int ,
+            description_for_categorization: str
+
+            ) -> MusicResponseS3:
 
             final_lyrics = "[instrumental]" if instrumental else lyrics   
 
@@ -187,8 +200,8 @@ class SynthoriaServer:
                 audio_duration= audio_duration,
                 infer_step= infer_step,
                 guidance_scale= guidance_scale,
-                seed = seed,
-                save_path= output_path
+                save_path= output_path,
+                manual_seed = str(seed)
 
             )
 
@@ -203,7 +216,7 @@ class SynthoriaServer:
             """Generate and upload thumbnail to S3"""
 
             thumbnail_prompt  = f"{prompt}, album art cover"
-            thumbnail = self.sdxl_turbo_model(prompt= thumbnail_prompt, num_inference_steps=1, guidance_scale=0.0).images[0]
+            thumbnail = self.sdxl_turbo_model(prompt= thumbnail_prompt, num_inference_steps=1, guidance_scale=0.0).images[0] 
             thumbnail_output_path = os.path.join(output_dir, f"{uuid.uuid4()}.png")
             thumbnail.save(thumbnail_output_path)
             
@@ -211,11 +224,16 @@ class SynthoriaServer:
             s3_client.upload(thumbnail_output_path, bucket_name, thumbnail_s3_key)
             os.remove(thumbnail_output_path)
 
+            """Audio Categories"""
 
+            categories = self.generate_category_tags(description_for_categorization)
 
+            return MusicResponseS3(                 # The generated keys and categories are returned to store them into the database
+                audio_s3_key = audio_s3_key,
+                thumbnail_s3_key = thumbnail_s3_key,
+                categories = categories
 
-
-
+            )
 
 
     
