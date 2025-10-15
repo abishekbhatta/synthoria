@@ -33,3 +33,18 @@ Lyrics:
 CATEGORY_PROMPT = """"
 Based on the following music description, list 3-5 relevant genres or categories as a comma-separated list. For example: Pop, Electronic, Sad, 80s. Description: "{description}"
 """
+
+
+THUMBNAIL_PROMPT_TEMPLATE = """
+Realistic, professional album cover art for a music track.  
+The cover should visually capture the mood, tone, and theme described below:  
+"{prompt}"  
+
+Depict the atmosphere through expressive objects, environments, lighting, and color — not human figures.  
+Use symbolic elements such as landscapes, architecture, instruments, silhouettes, reflections, or abstract textures to convey emotion and narrative.  
+Create a cinematic, high-detail composition with balanced lighting, realistic materials, and artistic depth.  
+The artwork should feel authentic, emotionally resonant, and conceptually meaningful — suitable for Spotify, Apple Music, and YouTube Music.  
+Focus on mood, symbolism, and color harmony rather than literal scenes or characters.  
+Do not include any text, people, faces, titles, signatures, watermarks, or logos.  
+Ultra-high resolution, 1:1 aspect ratio, photographic realism with subtle artistic interpretation.
+"""

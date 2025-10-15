@@ -8,7 +8,7 @@ import boto3
 
 from pydantic import BaseModel
 from typing import List
-from prompts import CATEGORY_PROMPT, SONG_DESCRIPTION_PROMPT_GENERATOR, LYRICS_PROMPT_GENERATOR
+from prompts import CATEGORY_PROMPT, SONG_DESCRIPTION_PROMPT_GENERATOR, LYRICS_PROMPT_GENERATOR, THUMBNAIL_PROMPT_TEMPLATE
 
 app = modal.App("synthoria")
 
@@ -75,7 +75,7 @@ class MusicReponse(BaseModel):
 # @app.cls() for a class & @app.function() for a function
 @app.cls(
     image=image, 
-    gpu="L40S",
+    gpu="L40S",     # Outperforms A100 on AI inference
     volumes={"/models": model_volume, "/.cache/huggingface": hf_volume},        # Volumes store the music-generation and hugging faces' model (qwen2b & sdxl_turbo)
     secrets= [modal.Secret.from_name("synthoria-secret")],
     scaledown_window= 15,  # Keep container idle for extra 15s after a request is dealt with
@@ -155,7 +155,7 @@ class SynthoriaServer:
 
     def generate_lyrics(self, lyrics_description: str):
 
-        prompt = LYRICS_PROMPT_GENERATOR.format(descripton=lyrics_description) # Inserts lyric description & creates lyrics generator prompt
+        prompt = LYRICS_PROMPT_GENERATOR.format(description=lyrics_description) # Inserts lyric description & creates lyrics generator prompt
 
         return self.qwen_2_llm(prompt) # Returns lyrics from the prompt
     
@@ -165,10 +165,8 @@ class SynthoriaServer:
         category_response =  self.qwen_2_llm(prompt)
         categories_list = [category.strip() for category in category_response.split(",") if category.strip()]
         return categories_list
-    
 
 
-    
     def generate_and_upload_to_s3(
             self,
             prompt: str,
@@ -187,8 +185,14 @@ class SynthoriaServer:
 
             final_lyrics = "[instrumental]" if instrumental else lyrics   
 
-            s3_client = boto3.client("s3")
-            bucket_name = os.environ("S3_BUCKET")
+            s3_client = boto3.client(
+                "s3",
+                aws_access_key_id=os.environ["AWS_ACCESS_KEY"],
+                aws_secret_access_key=os.environ["AWS_SECRET_KEY"],
+                region_name=os.environ["AWS_REGION"]
+            )
+
+            bucket_name = os.environ["S3_BUCKET"]
 
             output_dir = "/tmp/outputs"     # Output directory to store music generated temporarily  
             os.makedirs(output_dir, exist_ok=True) 
@@ -201,26 +205,26 @@ class SynthoriaServer:
                 infer_step= infer_step,
                 guidance_scale= guidance_scale,
                 save_path= output_path,
-                manual_seed = str(seed)
+                manual_seeds = str(seed)
 
             )
 
             """Upload music to S3"""
 
             audio_s3_key = f"{uuid.uuid4()}.wav"
-            s3_client.upload(output_path, bucket_name, audio_s3_key)
+            s3_client.upload_file(output_path, bucket_name, audio_s3_key)
             os.remove(output_path)
 
 
             """Generate and upload thumbnail to S3"""
 
-            thumbnail_prompt  = f"{prompt}, album art cover"
-            thumbnail = self.sdxl_turbo_model(prompt= thumbnail_prompt, num_inference_steps=1, guidance_scale=0.0).images[0] 
+            thumbnail_prompt  = THUMBNAIL_PROMPT_TEMPLATE.format(prompt=prompt)
+            thumbnail = self.sdxl_turbo_model(prompt= thumbnail_prompt, num_inference_steps=2, guidance_scale=0.0).images[0] 
             thumbnail_output_path = os.path.join(output_dir, f"{uuid.uuid4()}.png")
             thumbnail.save(thumbnail_output_path)
             
             thumbnail_s3_key = f"{uuid.uuid4()}.png"
-            s3_client.upload(thumbnail_output_path, bucket_name, thumbnail_s3_key)
+            s3_client.upload_file(thumbnail_output_path, bucket_name, thumbnail_s3_key)
             os.remove(thumbnail_output_path)
 
             """Audio Categories"""
@@ -231,36 +235,7 @@ class SynthoriaServer:
                 audio_s3_key = audio_s3_key,
                 thumbnail_s3_key = thumbnail_s3_key,
                 categories = categories
-
             )
-
-
-    
-
-    @modal.fastapi_endpoint(method="POST")  # FastAPI Endpoint
-    def synthesize(self) -> MusicReponse:
-        output_dir = "/tmp/outputs"
-        os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"{uuid.uuid4()}.wav")
-
-        self.synthesizer_model(
-            prompt="",
-            lyrics= "",
-            audio_duration=180,
-            infer_step=60,
-            guidance_scale=50,
-            save_path=output_path
-
-        )
-
-        with open(output_path, "rb") as f:
-            audio_bytes = f.read()
-        
-        audio_base64 = base64.b64encode(audio_bytes).decode("utf-8") # Turns audio to string to make JSON Compatible   
-        os.remove(output_path)
-
-        return MusicReponse(audio=audio_base64)
-    
 
     @modal.fastapi_endpoint(method="POST")
     def simple_mode(self, request: SimpleMode) -> MusicResponseS3:
@@ -275,7 +250,7 @@ class SynthoriaServer:
             prompt=audio_prompt, 
             lyrics=lyrics, 
             description_for_categorization= request.song_description,
-            **request.model_dump(exclude={"song_description"})    
+            **request.model_dump(exclude={"song_description"})    # model_dump jsonify the 
                                     
         )
 
@@ -291,7 +266,7 @@ class SynthoriaServer:
             prompt=request.prompt, 
             lyrics=lyrics, 
             description_for_categorization= request.prompt,
-            **request.model_dump(exclude={"lyrics_description"})    
+            **request.model_dump(exclude={"prompt", "lyrics_description"})    # model_dump() for jsonifying the requests' attributes
                                     
         )
 
@@ -302,25 +277,130 @@ class SynthoriaServer:
             prompt=request.prompt, 
             lyrics=request.lyrics, 
             description_for_categorization= request.prompt,
-            **request.model_dump()    
-                                    
-        )
+            **request.model_dump(exclude={'prompt', 'lyrics'})                               
+        ) 
 
+
+# Endpoint tests (Not to be included in the final code !!!)
 
 @app.local_entrypoint()
 def main():
     server = SynthoriaServer()
-    endpoint_url = server.synthesize.get_web_url()
-    response = requests.post(endpoint_url)
+    endpoint_url = server.custom_mode_manual_lyric.get_web_url()
+    
+    request_data = CustomModeManualLyrics(
+        prompt="Rap, 90s, Old School, Westside",
+        lyrics = """[Intro: Roger Troutman]
+                    California love, we-ooh
 
+                    [Chorus: Roger Troutman]
+                    California knows how to party
+                    California knows how to party
+                    In the city of L.A. 
+                    In the city of good ol' Watts
+                    In the city, city of Compton
+                    We keep it rockin', we keep it rockin' (Ooh)
+
+                    [Verse 1: Dr. Dre]
+                    Now, let me welcome everybody to the Wild, Wild West
+                    A state that's untouchable like Eliot Ness
+                    The track hits your eardrum like a slug to your chest
+                    Pack a vest for your Jimmy in the city of sex
+                    We in that sunshine state where the bomb-ass hemp be
+                    The state where you never find a dance floor empty
+                    And pimps be on a mission for them greens
+                    Lean mean money-makin'-machines servin' fiends
+                    I've been in the game for ten years makin' rap tunes
+                    Ever since honeys was wearin' Sassoon
+                    Now it's '95 and they clock me and watch me
+                    Diamonds shinin', lookin' like I robbed Liberace
+                    It's all good, from Diego to the Bay
+                    Your city is the bomb if your city makin' pay (Uh)
+                    Throw up a finger if you feel the same way
+                    Dre puttin' it down for Californ-i-a
+                  
+                    [Chorus: Roger Troutman & Dr. Dre]
+                    California (California) knows how to party (Knows how to party)
+                    California (West Coast) knows how to party (Yes, they do, that's right)
+                    In the city of L.A. (City of L.A.; Los Angeles)
+                    (Yeah) In the city of good ol' Watts (Good ol' Watts)
+                    In the city, city of Compton (City of Compton)
+                    Keep it rockin' (Keep it rockin'), keep it rockin' (Come on, come on, come on)
+                    Yeah, now make it shake, c'mon
+
+                    [Post-Chorus: Roger Troutman & Dr. Dre]
+                    Shake it, shake it, baby (Come on, come on, come on)
+                    Shake, shake it (Shake it, baby)
+                    Shake, shake it, mama (Come on, come on, come on)
+                    Shake it, Cali (Come on, come on, shake it, Cali)
+                    Shake it (We don't care), shake it, baby (Baby, right; that's right, uh)
+                    Shake it, shake it (Shake, shake, shake, shake)
+                    Shake it, shake it, mama (Shake, shake it, shake, shake)
+                    Shake it, Cali (Shake it now)
+
+                    [Verse 2: 2Pac & Dr. Dre]
+                    Out on bail, fresh out of jail, California dreamin'
+                    Soon as I step on the scene, I'm hearin' hoochies screamin'
+                    Fiendin' for money and alcohol, the life of a Westside player
+                    Where cowards die and the strong ball
+                    Only in Cali, where we riot, not rally, to live and die
+                    In L.A., we wearin' Chucks, not Ballys (Yeah, that's right, uh)
+                    Dressed in Locs and Khaki suits and ride is what we do
+                    Flossin' but have caution, we collide with other crews
+                    Famous because we throw grams
+                    Worldwide, let 'em recognize from Long Beach to Rosecrans
+                    Bumpin' and grindin' like a slow jam
+                    It's Westside, so you know the Row won't bow down to no man
+                    Say what you say, but give me that bomb beat from Dre
+                    Let me serenade the streets of L.A. 
+                    From Oakland to Sac-town, the Bay Area and back down
+                    Cali is where they put they mack down, give me love
+                    [Chorus: Roger Troutman & Dr. Dre]
+                    California (California) knows how to party (Ain't no stoppin')
+                    California (Do-do-do-do-do) knows how to party (Come on, baby)
+                    In the city (South Central) of L.A. (L.A.)
+                    In the city of good ol' Watts (That's right)
+                    In the city, city of Compton (Yup, yup)
+                    We keep it rockin' (Keep it rockin'), we keep it rockin' (Yeah, yeah)
+                    Now make it shake, uh
+
+                    [Post-Chorus: Roger Troutman & Dr. Dre]
+                    Shake, shake it, baby (Uh, shake)
+                    Shake, shake it (Uh, yeah; shake it, Cali)
+                    Shake it, shake it, mama (Yeah)
+                    Shake it, Cali (Shake it, Cali)
+                    Shake it, shake it, baby (Shake it, Cali)
+                    Shake it, shake it (Uh, uh)
+                    Shake it, shake it, mama (West Coast)
+                    Shake it, Cali (Uh)
+
+                    [Outro: 2Pac, Dr. Dre & Roger Troutman]
+                    Yeah, uh
+                    Uh, Long Beach in the house, uh, yeah
+                    Oaktown
+                    Oakland definitely in the house (Ha, ha-ha-ha-ha)
+                    Frisco, Frisco (Yeah)
+                    Hey, you know L.A. up in this
+                    Pasadena, where you at?
+                    Yeah, Inglewood
+                    Inglewood always up to no good
+                    Even Hollywood are tryna get a piece, baby
+                    Sacramento, Sacramento, where you at? Uh, yeah
+                    Throw it up, y'all, throw it up, throw it up
+                    I can't see ya
+                    California love
+                    Let's show these fools how we do it on this Westside
+                    'Cause you and I know it's the best side"""
+    )
+
+    payload = request_data.model_dump()             
+
+    response = requests.post(endpoint_url, json=payload)
     response.raise_for_status()
-    result = MusicReponse(**response.json())
+    result = MusicResponseS3(**response.json())
 
-    audio_bytes = base64.b64decode(result.audio)
-    output_filename = "generated.wav"
+    print(f"Success.\n Audio S3 Key: {result.audio_s3_key}, Thubmnail S3 Key: {result.thumbnail_s3_key}, and Category: {result.categories}")
 
-    with open(output_filename, "wb") as f:
-        f.write(audio_bytes)
 
     
 
