@@ -11,6 +11,14 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
+      MODAL_KEY : z.string(),
+      AWS_ACCESS_KEY : z.string(),
+      AWS_SECRET_KEY : z.string(),        /* The keys are confidentials, so they are stored in server instead on the client */
+      AWS_REGION : z.string(),
+      S3_BUCKET : z.string(),
+      SIMPLE_MODE : z.string(),
+      CUSTOM_MODE_AUTO_LYRIC : z.string(),
+      CUSTOM_MODE_MANUAL_LYRIC : z.string()
   },
 
   /**
@@ -27,8 +35,17 @@ export const env = createEnv({
    * middlewares) or client-side so we need to destruct manually.
    */
   runtimeEnv: {
+    
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    MODAL_KEY: process.env.MODAL_KEY,
+    AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
+    AWS_SECRET_KEY: process.env.AWS_SECRET_KEY,
+    AWS_REGION : process.env.AWS_REGION,
+    S3_BUCKET : process.env.S3_BUCKET,
+    SIMPLE_MODE : process.env.SIMPLE_MODE,
+    CUSTOM_MODE_AUTO_LYRIC : process.env.CUSTOM_MODE_AUTO_LYRIC,
+    CUSTOM_MODE_MANUAL_LYRIC : process.env.CUSTOM_MODE_MANUAL_LYRIC
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
