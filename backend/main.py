@@ -237,7 +237,7 @@ class SynthoriaServer:
                 categories = categories
             )
 
-    @modal.fastapi_endpoint(method="POST")
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)    # Set 'requires_proxy_auth = True' to protect unauthorized endpoint calls
     def simple_mode(self, request: SimpleMode) -> MusicResponseS3:
 
         audio_prompt = self.generate_audio_prompt(request.song_description)     # The prompt is just for generating music
@@ -255,7 +255,7 @@ class SynthoriaServer:
         )
 
 
-    @modal.fastapi_endpoint(method="POST")
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
     def custom_mode_auto_lyric(self, request : CustomModeAutoLyrics) -> MusicResponseS3:
     
         lyrics = ""
@@ -270,7 +270,7 @@ class SynthoriaServer:
                                     
         )
 
-    @modal.fastapi_endpoint(method="POST")
+    @modal.fastapi_endpoint(method="POST", requires_proxy_auth=True)
     def custom_mode_manual_lyric(self, request : CustomModeManualLyrics) -> MusicResponseS3:
 
         return self.generate_and_upload_to_s3(
@@ -279,127 +279,6 @@ class SynthoriaServer:
             description_for_categorization= request.prompt,
             **request.model_dump(exclude={'prompt', 'lyrics'})                               
         ) 
-
-
-# Endpoint tests (Not to be included in the final code !!!)
-
-@app.local_entrypoint()
-def main():
-    server = SynthoriaServer()
-    endpoint_url = server.custom_mode_manual_lyric.get_web_url()
-    
-    request_data = CustomModeManualLyrics(
-        prompt="Rap, 90s, Old School, Westside",
-        lyrics = """[Intro: Roger Troutman]
-                    California love, we-ooh
-
-                    [Chorus: Roger Troutman]
-                    California knows how to party
-                    California knows how to party
-                    In the city of L.A. 
-                    In the city of good ol' Watts
-                    In the city, city of Compton
-                    We keep it rockin', we keep it rockin' (Ooh)
-
-                    [Verse 1: Dr. Dre]
-                    Now, let me welcome everybody to the Wild, Wild West
-                    A state that's untouchable like Eliot Ness
-                    The track hits your eardrum like a slug to your chest
-                    Pack a vest for your Jimmy in the city of sex
-                    We in that sunshine state where the bomb-ass hemp be
-                    The state where you never find a dance floor empty
-                    And pimps be on a mission for them greens
-                    Lean mean money-makin'-machines servin' fiends
-                    I've been in the game for ten years makin' rap tunes
-                    Ever since honeys was wearin' Sassoon
-                    Now it's '95 and they clock me and watch me
-                    Diamonds shinin', lookin' like I robbed Liberace
-                    It's all good, from Diego to the Bay
-                    Your city is the bomb if your city makin' pay (Uh)
-                    Throw up a finger if you feel the same way
-                    Dre puttin' it down for Californ-i-a
-                  
-                    [Chorus: Roger Troutman & Dr. Dre]
-                    California (California) knows how to party (Knows how to party)
-                    California (West Coast) knows how to party (Yes, they do, that's right)
-                    In the city of L.A. (City of L.A.; Los Angeles)
-                    (Yeah) In the city of good ol' Watts (Good ol' Watts)
-                    In the city, city of Compton (City of Compton)
-                    Keep it rockin' (Keep it rockin'), keep it rockin' (Come on, come on, come on)
-                    Yeah, now make it shake, c'mon
-
-                    [Post-Chorus: Roger Troutman & Dr. Dre]
-                    Shake it, shake it, baby (Come on, come on, come on)
-                    Shake, shake it (Shake it, baby)
-                    Shake, shake it, mama (Come on, come on, come on)
-                    Shake it, Cali (Come on, come on, shake it, Cali)
-                    Shake it (We don't care), shake it, baby (Baby, right; that's right, uh)
-                    Shake it, shake it (Shake, shake, shake, shake)
-                    Shake it, shake it, mama (Shake, shake it, shake, shake)
-                    Shake it, Cali (Shake it now)
-
-                    [Verse 2: 2Pac & Dr. Dre]
-                    Out on bail, fresh out of jail, California dreamin'
-                    Soon as I step on the scene, I'm hearin' hoochies screamin'
-                    Fiendin' for money and alcohol, the life of a Westside player
-                    Where cowards die and the strong ball
-                    Only in Cali, where we riot, not rally, to live and die
-                    In L.A., we wearin' Chucks, not Ballys (Yeah, that's right, uh)
-                    Dressed in Locs and Khaki suits and ride is what we do
-                    Flossin' but have caution, we collide with other crews
-                    Famous because we throw grams
-                    Worldwide, let 'em recognize from Long Beach to Rosecrans
-                    Bumpin' and grindin' like a slow jam
-                    It's Westside, so you know the Row won't bow down to no man
-                    Say what you say, but give me that bomb beat from Dre
-                    Let me serenade the streets of L.A. 
-                    From Oakland to Sac-town, the Bay Area and back down
-                    Cali is where they put they mack down, give me love
-                    [Chorus: Roger Troutman & Dr. Dre]
-                    California (California) knows how to party (Ain't no stoppin')
-                    California (Do-do-do-do-do) knows how to party (Come on, baby)
-                    In the city (South Central) of L.A. (L.A.)
-                    In the city of good ol' Watts (That's right)
-                    In the city, city of Compton (Yup, yup)
-                    We keep it rockin' (Keep it rockin'), we keep it rockin' (Yeah, yeah)
-                    Now make it shake, uh
-
-                    [Post-Chorus: Roger Troutman & Dr. Dre]
-                    Shake, shake it, baby (Uh, shake)
-                    Shake, shake it (Uh, yeah; shake it, Cali)
-                    Shake it, shake it, mama (Yeah)
-                    Shake it, Cali (Shake it, Cali)
-                    Shake it, shake it, baby (Shake it, Cali)
-                    Shake it, shake it (Uh, uh)
-                    Shake it, shake it, mama (West Coast)
-                    Shake it, Cali (Uh)
-
-                    [Outro: 2Pac, Dr. Dre & Roger Troutman]
-                    Yeah, uh
-                    Uh, Long Beach in the house, uh, yeah
-                    Oaktown
-                    Oakland definitely in the house (Ha, ha-ha-ha-ha)
-                    Frisco, Frisco (Yeah)
-                    Hey, you know L.A. up in this
-                    Pasadena, where you at?
-                    Yeah, Inglewood
-                    Inglewood always up to no good
-                    Even Hollywood are tryna get a piece, baby
-                    Sacramento, Sacramento, where you at? Uh, yeah
-                    Throw it up, y'all, throw it up, throw it up
-                    I can't see ya
-                    California love
-                    Let's show these fools how we do it on this Westside
-                    'Cause you and I know it's the best side"""
-    )
-
-    payload = request_data.model_dump()             
-
-    response = requests.post(endpoint_url, json=payload)
-    response.raise_for_status()
-    result = MusicResponseS3(**response.json())
-
-    print(f"Success.\n Audio S3 Key: {result.audio_s3_key}, Thubmnail S3 Key: {result.thumbnail_s3_key}, and Category: {result.categories}")
 
 
     
