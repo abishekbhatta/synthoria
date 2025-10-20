@@ -1,8 +1,6 @@
-import base64
 import uuid
 import modal
 import os
-import requests
 import boto3 
 
 
