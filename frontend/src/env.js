@@ -12,6 +12,7 @@ export const env = createEnv({
       .enum(["development", "test", "production"])
       .default("development"),
       MODAL_KEY : z.string(),
+      MODAL_SECRET: z.string(),
       AWS_ACCESS_KEY : z.string(),
       AWS_SECRET_KEY : z.string(),        /* The keys are confidentials, so they are stored in server instead on the client */
       AWS_REGION : z.string(),
@@ -41,6 +42,7 @@ export const env = createEnv({
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     MODAL_KEY: process.env.MODAL_KEY,
+    MODAL_SECRET: process.env.MODAL_SECRET,
     AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
     AWS_SECRET_KEY: process.env.AWS_SECRET_KEY,
     AWS_REGION : process.env.AWS_REGION,
