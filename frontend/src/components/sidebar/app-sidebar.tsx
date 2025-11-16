@@ -1,6 +1,7 @@
-import { Calendar, Home, Inbox, Search, Settings } from "lucide-react"
+import { Calendar, Home, Inbox, Search, Settings, User } from "lucide-react"
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "../ui/sidebar"
 import SidebarMenuItems from "./sidebar-menu-items"
+import { UserButton } from "@daveyplate/better-auth-ui"
 import { Credits } from "./credits"
 
 
@@ -50,6 +51,16 @@ export function AppSidebar() {
         <div className="mb-2 flex w-full items-center justify-center gap-1 text-xs">
           <Credits />
         </div>
+        <UserButton
+          variant="outline"
+          additionalLinks={[
+            {
+              label: "Customer Portal",
+              href: "/customer-portal",
+              icon: <User/>,
+            },
+          ]}
+        />
       </SidebarFooter>
     </Sidebar>
   )
