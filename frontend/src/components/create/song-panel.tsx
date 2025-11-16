@@ -8,6 +8,7 @@ import { Loader2, Music, Plus } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Switch } from "../ui/switch";
 import { toast } from "sonner";
+import { generateSong, type GenerateRequest } from "~/actions/generation";
 
 const inspirationTags = [
   "80s synth-pop",
