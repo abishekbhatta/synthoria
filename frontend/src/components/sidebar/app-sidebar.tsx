@@ -3,6 +3,7 @@ import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupConte
 import SidebarMenuItems from "./sidebar-menu-items"
 import { UserButton } from "@daveyplate/better-auth-ui"
 import { Credits } from "./credits"
+import Upgrade from "./upgrade"
 
 
 // Menu items.
@@ -50,6 +51,7 @@ export function AppSidebar() {
     <SidebarFooter>
         <div className="mb-2 flex w-full items-center justify-center gap-1 text-xs">
           <Credits />
+          <Upgrade />
         </div>
         <UserButton
           variant="outline"
