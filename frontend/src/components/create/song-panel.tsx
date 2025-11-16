@@ -38,7 +38,54 @@ export function SongPanel(){
     const [styleInput, setStyleInput] = useState("");
     const [loading, setLoading] = useState(false);
 
-    
+    const handleCreate = async () => {
+        if (mode === "simple" && !description.trim()) {
+        toast.error("Please describe your song before creating.");
+        return;
+        }
+        if (mode === "custom" && !styleInput.trim()) {
+        toast.error("Please add some styles for your song.");
+        return;
+        }
+
+        // Generate song
+        let requestBody: GenerateRequest;
+
+        if (mode === "simple") {
+        requestBody = {
+            fullDescribedSong: description,
+            instrumental,
+        };
+        } else {
+        const prompt = styleInput;
+        if (lyricsMode === "write") {
+            requestBody = {
+            prompt,
+            lyrics,
+            instrumental,
+            };
+        } else {
+            requestBody = {
+            prompt,
+            describedLyrics: lyrics,
+            instrumental,
+            };
+        }
+        }
+
+        try {
+        setLoading(true);
+        await generateSong(requestBody);
+        setDescription("");
+        setLyrics("");
+        setStyleInput("");
+        } catch (error) {
+        toast.error("Failed to generate song");
+        } finally {
+        setLoading(false);
+        }
+    };
+
     const handleStyleInputTagClick = (tag: string) => {
         const currentTags = styleInput
         .split(", ")
