@@ -4,10 +4,10 @@ import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { Textarea } from "../ui/textarea";
 import { Button } from "../ui/button";
-import { Plus } from "lucide-react";
+import { Loader2, Music, Plus } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Switch } from "../ui/switch";
-
+import { toast } from "sonner";
 
 const inspirationTags = [
   "80s synth-pop",
@@ -36,6 +36,23 @@ export function SongPanel(){
     const [lyricsMode, setLyricsMode] = useState<"write" | "auto">("write");
     const [lyrics, setLyrics] = useState("");
     const [styleInput, setStyleInput] = useState("");
+    const [loading, setLoading] = useState(false);
+
+    
+    const handleStyleInputTagClick = (tag: string) => {
+        const currentTags = styleInput
+        .split(", ")
+        .map((s) => s.trim())
+        .filter((s) => s);
+
+        if (!currentTags.includes(tag)) {
+        if (styleInput.trim() === "") {
+            setStyleInput(tag);
+        } else {
+            setStyleInput(styleInput + ", " + tag);
+        }
+        }
+    };
 
 
     const handleInspirationTagClick = (tag: string) => {
@@ -53,7 +70,8 @@ export function SongPanel(){
         }
     };
     
-    return <div className="bg-muted/30 flex w-full flex-col border-r lg:w-80">
+    return (
+    <div className="bg-muted/30 flex w-full flex-col border-r lg:w-80">
         <div className="flex-1 overflow-y-auto p-4">
             <Tabs
                 value={mode}
@@ -192,5 +210,17 @@ export function SongPanel(){
                 
             </Tabs>
         </div>
+
+        <div className="border-t p-4">
+            <Button
+            onClick={()=> {}}
+            disabled={loading}
+            className="w-full cursor-pointer bg-gradient-to-r from-orange-500 to-pink-500 font-medium text-white hover:from-orange-600 hover:to-pink-600"
+            >
+            {loading ? <Loader2 className="animate-spin" /> : <Music />}
+            {loading ? "Creating..." : "Create"}
+            </Button>
+        </div>
     </div>
+    )
 }
