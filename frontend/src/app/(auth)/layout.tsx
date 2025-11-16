@@ -20,7 +20,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${geist.variable}`}>
-      <body className="flex flex-col min-h-svh">
+      <body className="flex flex-col min-h-svh" style={{
+        backgroundImage: "url(/background.jpg)",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+      }}>
         <Providers>
             {children}
             <Toaster/>
