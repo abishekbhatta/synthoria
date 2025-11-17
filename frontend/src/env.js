@@ -21,7 +21,6 @@ export const env = createEnv({
       CUSTOM_MODE_AUTO_LYRIC : z.string(),
       CUSTOM_MODE_MANUAL_LYRIC : z.string(),
       BETTER_AUTH_SECRET: z.string(),
-      BETTER_AUTH_URL: z.string()
   },
 
   /**
@@ -51,7 +50,6 @@ export const env = createEnv({
     CUSTOM_MODE_AUTO_LYRIC : process.env.CUSTOM_MODE_AUTO_LYRIC,
     CUSTOM_MODE_MANUAL_LYRIC : process.env.CUSTOM_MODE_MANUAL_LYRIC,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
-    BETTER_AUTH_URL: process.env.BETTER_AUTH_URL
 
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
