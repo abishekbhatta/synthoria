@@ -14,7 +14,7 @@ export const env = createEnv({
       MODAL_KEY : z.string(),
       MODAL_SECRET: z.string(),
       AWS_ACCESS_KEY : z.string(),
-      AWS_SECRET_KEY : z.string(),        /* The keys are confidentials, so they are stored in server instead on the client */
+      AWS_SECRET_KEY_ID : z.string(),        /* The keys are confidentials, so they are stored in server instead on the client */
       AWS_REGION : z.string(),
       S3_BUCKET : z.string(),
       SIMPLE_MODE : z.string(),
@@ -43,7 +43,7 @@ export const env = createEnv({
     MODAL_KEY: process.env.MODAL_KEY,
     MODAL_SECRET: process.env.MODAL_SECRET,
     AWS_ACCESS_KEY: process.env.AWS_ACCESS_KEY,
-    AWS_SECRET_KEY: process.env.AWS_SECRET_KEY,
+    AWS_SECRET_KEY_ID: process.env.AWS_SECRET_KEY_ID,
     AWS_REGION : process.env.AWS_REGION,
     S3_BUCKET : process.env.S3_BUCKET,
     SIMPLE_MODE : process.env.SIMPLE_MODE,

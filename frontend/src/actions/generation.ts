@@ -102,7 +102,7 @@ export async function getPresignedUrl(key: string) {
     region: env.AWS_REGION,
     credentials: {
       accessKeyId: env.AWS_ACCESS_KEY,
-      secretAccessKey: env.AWS_SECRET_KEY,
+      secretAccessKey: env.AWS_SECRET_KEY_ID,
     },
   });
 
