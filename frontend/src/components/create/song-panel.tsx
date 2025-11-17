@@ -261,7 +261,7 @@ export function SongPanel(){
 
         <div className="border-t p-4">
             <Button
-            onClick={()=> {}}
+            onClick={handleCreate}
             disabled={loading}
             className="w-full cursor-pointer bg-gradient-to-r from-orange-500 to-pink-500 font-medium text-white hover:from-orange-600 hover:to-pink-600"
             >
