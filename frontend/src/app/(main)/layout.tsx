@@ -9,6 +9,7 @@ import { AppSidebar } from "~/components/sidebar/app-sidebar";
 import { Separator } from "~/components/ui/separator";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbList } from "~/components/ui/breadcrumb";
 import BreadcrumbPageClient from "~/components/sidebar/breadcumb-page-client";
+import SoundBar from "~/components/sound-bar";
 
 export const metadata: Metadata = {
   title: "Synthoria",
@@ -49,6 +50,7 @@ export default function RootLayout({
                 <main className="flex-1 overflow-y-auto">
                     {children}
                 </main>
+                <SoundBar/>
             </SidebarInset>
           </SidebarProvider>
             <Toaster/>
