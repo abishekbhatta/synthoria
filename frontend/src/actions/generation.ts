@@ -101,7 +101,7 @@ export async function getPresignedUrl(key: string) {
   const s3Client = new S3Client({
     region: env.SYN_AWS_REGION,
     credentials: {
-      accessKeyId: env.AWS_ACCESS_KEY,
+      accessKeyId: env.AWS_ACCESS_KEY_ID,
       secretAccessKey: env.SYN_AWS_SECRET_KEY_ID,
     },
   });
