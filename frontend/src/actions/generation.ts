@@ -99,10 +99,10 @@ export async function getPlayUrl(songId: string) {
 
 export async function getPresignedUrl(key: string) {
   const s3Client = new S3Client({
-    region: env.AWS_REGION,
+    region: env.SYN_AWS_REGION,
     credentials: {
       accessKeyId: env.AWS_ACCESS_KEY,
-      secretAccessKey: env.AWS_SECRET_KEY_ID,
+      secretAccessKey: env.SYN_AWS_SECRET_KEY_ID,
     },
   });
 
